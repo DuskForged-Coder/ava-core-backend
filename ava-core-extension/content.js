@@ -1,7 +1,7 @@
 (function initAvaCore() {
   const ROOT_ID = "ava-core-root";
   const UI_VERSION = "jarvis-anime-3d-v2-voice-render";
-  const BACKEND_URL = "https://your-backend.onrender.com/ask";
+  const BACKEND_URL = "https://ava-core-backend.onrender.com/ask";
   const REQUEST_TIMEOUT_MS = 10000;
   const LOADING_MESSAGE = "AVA is thinking...";
   const EMPTY_RESPONSE_MESSAGE = "No response received.";
