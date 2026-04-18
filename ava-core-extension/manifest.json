@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "AVA Core",
+  "version": "1.0.0",
+  "description": "A floating AI assistant that appears on any webpage.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "AVA Core",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/avatar.gif",
+        "assets/avatar.png",
+        "assets/avatar.glb",
+        "assets/three.module.js",
+        "assets/three.core.js",
+        "assets/GLTFLoader.js",
+        "assets/BufferGeometryUtils.js",
+        "assets/SkeletonUtils.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

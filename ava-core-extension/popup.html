@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AVA Core</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        width: 280px;
+        margin: 0;
+        padding: 20px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(74, 195, 255, 0.24), transparent 42%),
+          linear-gradient(180deg, #07111f, #0d1d35);
+        color: #eef8ff;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: #bbd6eb;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      button {
+        width: 100%;
+        min-height: 46px;
+        border: 0;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #33d4ff, #4f7fff);
+        color: #07121c;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .status {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(126, 228, 255, 0.1);
+        font-size: 13px;
+        color: #dff7ff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AVA Core</h1>
+    <p>Activate the floating assistant on the current tab and start chatting with page-aware context.</p>
+    <button id="activate-assistant" type="button">Activate Assistant</button>
+    <div id="status" class="status">Ready to activate on this tab.</div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

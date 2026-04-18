@@ -1,0 +1,16 @@
+If you have not started it yet, you need to run these commands in your terminal from the root directory of your Java project:
+
+Build the project:
+
+bash
+# mvn clean install
+
+Start the server:
+
+bash
+# mvn spring-boot:run
+
+
+Once the terminal shows that the application has started (usually says "Started AvaCoreApplication in ... seconds"), the backend is live on your local machine, and your Chrome extension will be able to communicate with it.
+
+Note on Code Collision: I noticed that you have two controller files in your context: AvaController.java and ChatController.java. Both are trying to handle the same /ask endpoint. When you run the application, Spring Boot will likely throw an error because of this duplicate mapping. You should choose one and remove the other (or change the path) to avoid this.

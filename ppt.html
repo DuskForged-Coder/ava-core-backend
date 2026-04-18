@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AVA Core – Final Presentation Deck</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg-primary: linear-gradient(135deg, #0a0a1e 0%, #1a0a2e 50%, #0a1430 100%);
+      --neon-purple: #8b5cf6;
+      --neon-cyan: #06b6d4;
+      --neon-pink: #ec4899;
+      --neon-green: #10b981;
+      --neon-orange: #f59e0b;
+      --neon-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --card-bg: rgba(15, 23, 42, 0.8);
+      --glow-purple: 0 0 20px rgba(139, 92, 246, 0.5);
+      --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.5);
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+    }
+    .slide-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease-in-out;
+    }
+    .slide {
+      max-width: 1200px;
+      max-height: 800px;
+      padding: 60px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow: var(--glow-purple), inset 0 1px 0 rgba(255,255,255,0.1);
+      opacity: 0;
+      transform: scale(0.9) translateY(30px);
+      animation: slideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    .slide h1 {
+      font-size: 4rem;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      text-align: center;
+      filter: drop-shadow(0 0 10px rgba(139,92,246,0.3));
+    }
+    .slide h2 {
+      font-size: 2.5rem;
+      color: var(--neon-cyan);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .team-list {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+    }
+    .content-bullets {
+      font-size: 1.8rem;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .content-bullets li {
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .quote {
+      font-size: 2rem;
+      font-style: italic;
+      color: var(--neon-pink);
+      text-align: center;
+      margin-top: 2rem;
+      padding: 2rem;
+      border-left: 4px solid var(--neon-pink);
+      background: rgba(236, 72, 153, 0.1);
+      border-radius: 12px;
+    }
+    .architecture-flow {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+      font-size: 1.5rem;
+    }
+    .flow-item {
+      padding: 1.5rem 2rem;
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      border: 2px solid var(--neon-purple);
+      box-shadow: var(--glow-purple);
+      min-width: 150px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+    .flow-arrow {
+      font-size: 3rem;
+      color: var(--neon-cyan);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .tech-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .tech-item {
+      padding: 1.5rem;
+      background: rgba(6, 182, 212, 0.2);
+      border-radius: 12px;
+      border: 2px solid var(--neon-cyan);
+      text-align: center;
+      box-shadow: var(--glow-cyan);
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+    .process-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+      font-size: 1.6rem;
+    }
+    .unique-features {
+      font-size: 1.8rem;
+    }
+    .future-scope {
+      font-size: 1.6rem;
+    }
+    .controls {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1rem;
+    }
+    .nav-btn {
+      padding: 12px 24px;
+      background: var(--neon-purple);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: var(--glow-purple);
+      transition: all 0.3s ease;
+    }
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(139,92,246,0.6);
+    }
+    .slide-number {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      background: rgba(0,0,0,0.5);
+      padding: 10px 20px;
+      border-radius: 20px;
+      color: var(--neon-cyan);
+      font-weight: bold;
+    }
+    /* Color-coded backgrounds per slide */
+    .slide-1 { border-color: var(--neon-purple); box-shadow: var(--glow-purple); }
+    .slide-2 { border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+    .slide-3 { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(16,185,129,0.5); }
+    .slide-4 { border-color: var(--neon-orange); box-shadow: 0 0 20px rgba(245,158,11,0.5); }
+    .slide-5 { border-color: var(--neon-red); box-shadow: 0 0 20px rgba(239,68,68,0.5); }
+    .slide-6 { border-color: var(--neon-purple); box-shadow: var(--glow-purple); }
+    .slide-7 { border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+    .slide-8 { border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(236,72,153,0.5); }
+    .slide-9 { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(16,185,129,0.5); }
+    .slide-10 { border-color: var(--neon-orange); box-shadow: 0 0 20px rgba(245,158,11,0.5); }
+  </style>
+</head>
+<body>
+  <div class="slide-number" id="slideNumber">Slide 1/10</div>
+  <div id="slideContainer"></div>
+  <div class="controls">
+    <button class="nav-btn" id="prevBtn">← Previous</button>
+    <button class="nav-btn" id="nextBtn">Next →</button>
+  </div>
+
+  <script>
+    const slides = [
+      // Slide 1
+      `
+        <div class="slide slide-1">
+          <h1>AVA Core</h1>
+          <h2>AI-Powered Web Intelligence Assistant</h2>
+          <div class="team-list">
+            <div>Aditya Narayan Rautaray</div>
+            <div>Raunit Dogra</div>
+            <div>Vansh Gauttam</div>
+          </div>
+        </div>
+      `,
+      // Slide 2
+      `
+        <div class="slide slide-2">
+          <h2>🟣 Problem Statement</h2>
+          <ul class="content-bullets">
+            >Users spend too much time reading long web content</li>
+            >Complex information is hard to understand</li>
+            >No real-time assistance while browsing</li>
+          </ul>
+          <div class="quote">“The internet has information, but lacks instant understanding.”</div>
+        </div>
+      `,
+      // Slide 3
+      `
+        <div class="slide slide-3">
+          <h2>🟢 Proposed Solution</h2>
+          <ul class="content-bullets">
+            >AI assistant on every webpage</li>
+            >Instant summaries</li>
+            >Context-aware answers</li>
+            >Interactive browsing experience</li>
+          </ul>
+          <div class="quote">“Transforming browsing into intelligent interaction.”</div>
+        </div>
+      `,
+      // Slide 4
+      `
+        <div class="slide slide-4">
+          <h2>🟡 Key Features</h2>
+          <ul class="content-bullets">
+            >Webpage summarization</li>
+            >Doubt solving (Q&A)</li>
+            >Floating AI assistant</li>
+            >Works on any website</li>
+            >User-provided API key system</li>
+          </ul>
+        </div>
+      `,
+      // Slide 5
+      `
+        <div class="slide slide-5">
+          <h2>🟠 System Architecture</h2>
+          <div class="architecture-flow">
+            <div class="flow-item">Chrome Extension<br><small>User Interface</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">Java Backend<br><small>Processing</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">AI<br><small>Intelligence</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">Response</div>
+          </div>
+        </div>
+      `,
+      // Slide 6
+      `
+        <div class="slide slide-6">
+          <h2>🔴 Technology Stack</h2>
+          <div class="tech-stack">
+            <div class="tech-item">Frontend:<br>HTML, CSS, JavaScript</div>
+            <div class="tech-item">Backend:<br>Java (Spring Boot)</div>
+            <div class="tech-item">AI Integration:<br>Google Gemini API</div>
+            <div class="tech-item">Platform:<br>Chrome Extension</div>
+          </div>
+        </div>
+      `,
+      // Slide 7
+      `
+        <div class="slide slide-7">
+          <h2>🔵 Working Process</h2>
+          <div class="process-steps">
+            <div>1. User opens any website</div>
+            <div>2. Activates AVA Core</div>
+            <div>3. Enters query or selects text</div>
+            <div>4. System processes request</div>
+            <div>5. AI returns response instantly</div>
+          </div>
+        </div>
+      `,
+      // Slide 8
+      `
+        <div class="slide slide-8">
+          <h2>🟢 Unique Features</h2>
+          <ul class="content-bullets unique-features">
+            >Works on all websites</li>
+            >Page-aware intelligence</li>
+            >Custom API key support</li>
+            >Modern UI (Jarvis + Anime style)</li>
+            >Lightweight and fast</li>
+          </ul>
+        </div>
+      `,
+      // Slide 9
+      `
+        <div class="slide slide-9">
+          <h2>🔴 Future Scope</h2>
+          <ul class="content-bullets future-scope">
+            >Voice interaction</li>
+            >3D avatar system (.glb)</li>
+            >Cybersecurity integration (phishing detection)</li>
+            >Personalized AI memory</li>
+          </ul>
+        </div>
+      `,
+      // Slide 10
+      `
+        <div class="slide slide-10">
+          <h2>🔣 Conclusion</h2>
+          <ul class="content-bullets">
+            >Enhances user productivity</li>
+            >Simplifies complex information</li>
+            >Makes browsing interactive</li>
+          </ul>
+          <div class="quote">“AVA Core is a step toward smarter web experiences.”</div>
+        </div>
+      `
+    ];
+
+    let current = 0;
+
+    function showSlide(index) {
+      const container = document.getElementById('slideContainer');
+      container.innerHTML = slides[index];
+      
+      // Animate bullets/items
+      const items = container.querySelectorAll('.content-bullets li, .flow-item, .tech-item');
+      items.forEach((item, i) => {
+        item.style.animationDelay = `${i * 0.2}s`;
+        item.style.transform = 'translateY(20px)';
+      });
+
+      document.getElementById('slideNumber').textContent = `Slide ${index + 1}/10`;
+      
+      // Update buttons
+      document.getElementById('prevBtn').disabled = index === 0;
+      document.getElementById('nextBtn').disabled = index === slides.length - 1;
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (current < slides.length - 1) showSlide(++current);
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (current > 0) showSlide(--current);
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        if (current < slides.length - 1) showSlide(++current);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        if (current > 0) showSlide(--current);
+      }
+    });
+
+    // Initial load
+    showSlide(0);
+  </script>
+</body>
+</html>

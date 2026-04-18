@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ava-core-backend
+    runtime: java
+    plan: free
+    rootDir: .
+    buildCommand: mvn clean package
+    startCommand: java -jar target/ava-core-backend-1.0.0.jar
+    healthCheckPath: /health
+    autoDeploy: true
