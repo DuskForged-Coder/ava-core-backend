@@ -16,7 +16,8 @@ class AvaControllerTest {
         GeminiService geminiService = new GeminiService(
             new RestTemplate(),
             new ObjectMapper(),
-            "gemini-2.5-flash"
+            "gemini-2.5-flash",
+            ""
         );
         AvaService avaService = new AvaService(geminiService);
         AvaController controller = new AvaController(avaService);
@@ -30,7 +31,8 @@ class AvaControllerTest {
         GeminiService geminiService = new GeminiService(
             new RestTemplate(),
             new ObjectMapper(),
-            "gemini-2.5-flash"
+            "gemini-2.5-flash",
+            ""
         );
         AvaService avaService = new AvaService(geminiService);
         AvaController controller = new AvaController(avaService);

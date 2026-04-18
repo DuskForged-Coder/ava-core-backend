@@ -29,20 +29,23 @@ public class GeminiService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final String model;
+    private final String apiKey;
 
     public GeminiService(
         RestTemplate restTemplate,
         ObjectMapper objectMapper,
-        @Value("${gemini.model:gemini-2.5-flash}") String model
+        @Value("${gemini.model:gemini-2.5-flash}") String model,
+        @Value("${gemini.api-key:${GEMINI_API_KEY:${GOOGLE_API_KEY:}}}") String apiKey
     ) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.model = model;
+        this.apiKey = sanitizeApiKey(apiKey);
     }
 
     public String generateResponse(String message, String content) {
-        String apiKey = System.getenv("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
+            LOGGER.warn("Gemini API key is not configured");
             return FALLBACK_RESPONSE;
         }
 
@@ -227,6 +230,14 @@ public class GeminiService {
     private String sanitize(String value) {
         if (value == null || value.isBlank()) {
             return "N/A";
+        }
+
+        return value.trim();
+    }
+
+    private String sanitizeApiKey(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
         }
 
         return value.trim();
