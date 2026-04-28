@@ -1,10 +1,11 @@
 (function initAvaCore() {
   const ROOT_ID = "ava-core-root";
-  const UI_VERSION = "jarvis-anime-3d-v3-local-first";
+  const UI_VERSION = "jarvis-anime-3d-v4-hybrid-fallback";
   const LOADING_MESSAGE = "AVA is thinking locally...";
   const EMPTY_RESPONSE_MESSAGE = "No response received.";
   const SERVER_ERROR_MESSAGE = "Local assistant unavailable. Please try again.";
   const TIMEOUT_ERROR_MESSAGE = "Local AI timed out. Please try again.";
+  const MIN_MODEL_REPLY_LENGTH = 24;
   const LOCAL_AI_SYSTEM_PROMPT = `
     You are AVA Core, a futuristic browser assistant.
     - Be concise, professional, and helpful.
@@ -296,6 +297,8 @@
       this.quickActions = [];
       this.isLoading = false;
       this.runtimeLabel = "Local AI";
+      this.sessionId = this.createSessionId();
+      this.turnHistory = [];
       this.isListening = false;
       this.isSpeaking = false;
       this.recognition = null;
@@ -843,6 +846,36 @@
       ].join("\n");
     }
 
+    createSessionId() {
+      const urlPart = window.location.hostname || "page";
+      const randomPart =
+        typeof crypto?.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+      return `ava-${urlPart}-${randomPart}`;
+    }
+
+    recordTurn(role, text) {
+      const normalizedText = (text || "").trim();
+      if (!normalizedText) {
+        return;
+      }
+
+      this.turnHistory.push({
+        role,
+        text: normalizedText
+      });
+
+      if (this.turnHistory.length > 8) {
+        this.turnHistory.splice(0, this.turnHistory.length - 8);
+      }
+    }
+
+    getRecentHistory() {
+      return this.turnHistory.slice(-6);
+    }
+
     setRuntimeMode(label) {
       if (!label) {
         return;
@@ -953,7 +986,7 @@
             "";
 
           const reply = typeof response === "string" ? response.trim() : this.extractReply(response);
-          if (reply) {
+          if (this.isUsableModelReply(reply, message)) {
             this.setRuntimeMode("Browser AI");
             return reply;
           }
@@ -965,6 +998,42 @@
       }
 
       return "";
+    }
+
+    isUsableModelReply(reply, message) {
+      const normalizedReply = (reply || "").trim();
+      if (!normalizedReply || normalizedReply.length < MIN_MODEL_REPLY_LENGTH) {
+        return false;
+      }
+
+      if (
+        /\b(internal server error|traceback|model not found|failed to fetch|timed out|service unavailable|connection refused)\b/i.test(
+          normalizedReply
+        )
+      ) {
+        return false;
+      }
+
+      if (/<think>|<\/think>|^\s*\{[\s\S]*\}\s*$|^\s*<html/i.test(normalizedReply)) {
+        return false;
+      }
+
+      const queryTokens = this.tokenize(message);
+      if (!queryTokens.length) {
+        return true;
+      }
+
+      const replyTokens = new Set(this.tokenize(normalizedReply));
+      const overlap = queryTokens.filter((token) => replyTokens.has(token)).length;
+      return overlap / queryTokens.length >= 0.12;
+    }
+
+    tokenize(value) {
+      return (value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9.+-]+/g, " ")
+        .split(/\s+/)
+        .filter(Boolean);
     }
 
     extractReply(payload) {
@@ -1008,7 +1077,10 @@
         systemPrompt: LOCAL_AI_SYSTEM_PROMPT,
         prompt: this.buildRuntimePrompt(message, content),
         message,
-        content
+        content,
+        sessionId: this.sessionId,
+        pageUrl: window.location.href,
+        history: this.getRecentHistory()
       });
 
       if (!runtimeResponse || typeof runtimeResponse !== "object") {
@@ -1086,6 +1158,7 @@
       }
 
       await this.typeText(placeholder.body, text);
+      this.recordTurn("assistant", text);
     }
 
     handleQuickAction(action) {
@@ -1126,6 +1199,7 @@
       this.stopListening();
       this.stopSpeaking();
       this.addMessage("user", message);
+      this.recordTurn("user", message);
       this.input.value = "";
       this.setLoading(true);
 

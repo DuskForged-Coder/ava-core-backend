@@ -4,7 +4,7 @@ const OLLAMA_ENDPOINTS = [
   "http://127.0.0.1:11434/api/generate",
   "http://localhost:11434/api/generate"
 ];
-const REMOTE_FALLBACK_ENABLED = false;
+const REMOTE_FALLBACK_ENABLED = true;
 const REMOTE_FALLBACK_URL = "https://ava-core-backend.onrender.com/ask";
 const LOCAL_ONLY_GUIDANCE =
   "Local-first mode is enabled, but no on-device model is ready yet. Start Ollama with `ollama serve` and pull `llama3`, or use a Chrome build with on-device browser AI enabled.";
@@ -38,7 +38,10 @@ async function handleGenerationRequest(message) {
     systemPrompt: sanitize(message.systemPrompt),
     prompt: sanitize(message.prompt),
     userMessage: sanitize(message.message),
-    content: sanitize(message.content)
+    content: sanitize(message.content),
+    sessionId: sanitize(message.sessionId),
+    pageUrl: sanitize(message.pageUrl),
+    history: Array.isArray(message.history) ? message.history : []
   };
 
   const ollamaReply = await tryLocalOllama(payload);
@@ -52,12 +55,12 @@ async function handleGenerationRequest(message) {
   }
 
   if (REMOTE_FALLBACK_ENABLED) {
-    const remoteReply = await tryRemoteFallback(payload.userMessage, payload.content);
+    const remoteReply = await tryRemoteFallback(payload);
     if (remoteReply) {
       return {
         ok: true,
         provider: "node-fallback",
-        providerLabel: "Node Fallback",
+        providerLabel: "Hybrid Search",
         response: remoteReply
       };
     }
@@ -93,7 +96,7 @@ async function tryLocalOllama(payload) {
 
       const data = await response.json();
       const reply = extractReply(data);
-      if (reply) {
+      if (isUsableModelReply(reply, payload.userMessage)) {
         return reply;
       }
     } catch (error) {
@@ -104,7 +107,7 @@ async function tryLocalOllama(payload) {
   return "";
 }
 
-async function tryRemoteFallback(message, content) {
+async function tryRemoteFallback(payload) {
   try {
     const response = await fetchWithTimeout(REMOTE_FALLBACK_URL, {
       method: "POST",
@@ -112,8 +115,11 @@ async function tryRemoteFallback(message, content) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message,
-        content
+        sessionId: payload.sessionId,
+        message: payload.userMessage,
+        content: payload.content,
+        pageUrl: payload.pageUrl,
+        history: payload.history
       })
     });
 
@@ -165,4 +171,40 @@ function sanitize(value) {
   }
 
   return value.trim();
+}
+
+function isUsableModelReply(reply, message) {
+  const normalizedReply = sanitize(reply);
+  if (!normalizedReply || normalizedReply.length < 24) {
+    return false;
+  }
+
+  if (
+    /\b(internal server error|traceback|model not found|failed to fetch|timed out|service unavailable|connection refused)\b/i.test(
+      normalizedReply
+    )
+  ) {
+    return false;
+  }
+
+  if (/<think>|<\/think>|^\s*\{[\s\S]*\}\s*$|^\s*<html/i.test(normalizedReply)) {
+    return false;
+  }
+
+  const queryTokens = tokenize(message);
+  if (!queryTokens.length) {
+    return true;
+  }
+
+  const replyTokens = new Set(tokenize(normalizedReply));
+  const overlap = queryTokens.filter((token) => replyTokens.has(token)).length;
+  return overlap / queryTokens.length >= 0.12;
+}
+
+function tokenize(value) {
+  return sanitize(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9.+-]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
 }
