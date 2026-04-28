@@ -1,12 +1,18 @@
 (function initAvaCore() {
   const ROOT_ID = "ava-core-root";
-  const UI_VERSION = "jarvis-anime-3d-v2-voice-render";
-  const BACKEND_URL = "https://ava-core-backend.onrender.com/ask";
-  const REQUEST_TIMEOUT_MS = 10000;
-  const LOADING_MESSAGE = "AVA is thinking...";
+  const UI_VERSION = "jarvis-anime-3d-v3-local-first";
+  const LOADING_MESSAGE = "AVA is thinking locally...";
   const EMPTY_RESPONSE_MESSAGE = "No response received.";
-  const SERVER_ERROR_MESSAGE = "Server unavailable. Please try again.";
-  const TIMEOUT_ERROR_MESSAGE = "Request timed out. Please try again.";
+  const SERVER_ERROR_MESSAGE = "Local assistant unavailable. Please try again.";
+  const TIMEOUT_ERROR_MESSAGE = "Local AI timed out. Please try again.";
+  const LOCAL_AI_SYSTEM_PROMPT = `
+    You are AVA Core, a futuristic browser assistant.
+    - Be concise, professional, and helpful.
+    - Prioritize the provided page content and any selected text.
+    - If the answer is not fully supported by the page, say you are inferring.
+    - Keep answers practical and easy to scan.
+    - If the user says "AVA-EXPLAIN", explain the project confidently on behalf of the team leader, mention that the leader is absent, describe the flow as extension to local AI to response, explain that a more stable build is being shown because earlier avatar and voice features were unreliable, offer to show the earlier version via video, mention voice recognition is close but still needs refinement, and close respectfully with future scope. Use "Ma'am" in that explanation.
+  `.trim();
 
   const existingRoot = document.getElementById(ROOT_ID);
   if (existingRoot) {
@@ -289,6 +295,7 @@
       this.statusValue = null;
       this.quickActions = [];
       this.isLoading = false;
+      this.runtimeLabel = "Local AI";
       this.isListening = false;
       this.isSpeaking = false;
       this.recognition = null;
@@ -313,6 +320,7 @@
       this.bindEvents();
       this.seedConversation();
       this.initialize3DAvatar();
+      this.detectPreferredRuntime();
     }
 
     render() {
@@ -338,10 +346,10 @@
                     <h2 class="ava-core-title">AVA Core</h2>
                     <span class="ava-core-status-pill">
                       <span class="ava-core-status-dot"></span>
-                      <span class="ava-core-status-text">Online</span>
+                      <span class="ava-core-status-text">Local AI</span>
                     </span>
                   </div>
-                  <p class="ava-core-subtitle">Futuristic guidance with page-aware intelligence.</p>
+                  <p class="ava-core-subtitle">Browser-first assistance with private, local intelligence.</p>
                 </div>
               </div>
               <button class="ava-core-close" type="button" aria-label="Close assistant">
@@ -645,7 +653,7 @@
             ? "Listening"
             : this.isSpeaking
               ? "Speaking"
-              : "Online";
+              : this.runtimeLabel;
       }
 
       if (this.micButton) {
@@ -718,7 +726,7 @@
     seedConversation() {
       this.addMessage(
         "assistant",
-        "AVA Core online. Ask me to break down the page, explain highlighted text, or respond with live context."
+        "AVA Core local-first mode is active. Ask me to break down the page, explain highlighted text, or respond with private on-device context."
       );
     }
 
@@ -825,6 +833,140 @@
       return `Selected text:\n${selectedText.slice(0, 1200)}\n\nPage content:\n${pageContent}`;
     }
 
+    buildRuntimePrompt(message, content) {
+      return [
+        "User Question:",
+        message.trim() || "N/A",
+        "",
+        "Webpage Content:",
+        content.trim() || "N/A"
+      ].join("\n");
+    }
+
+    setRuntimeMode(label) {
+      if (!label) {
+        return;
+      }
+
+      this.runtimeLabel = label;
+      if (!this.isLoading && !this.isListening && !this.isSpeaking && this.statusValue) {
+        this.statusValue.textContent = label;
+      }
+    }
+
+    async detectPreferredRuntime() {
+      const browserRuntimeAvailable = await this.hasBrowserModelSupport();
+      this.setRuntimeMode(browserRuntimeAvailable ? "Browser AI" : "Local AI");
+    }
+
+    async hasBrowserModelSupport() {
+      const candidates = this.getBrowserModelCandidates();
+
+      for (const candidate of candidates) {
+        try {
+          const availability = await candidate.getAvailability?.();
+          if (!this.isBrowserModelUnavailable(availability)) {
+            return true;
+          }
+        } catch (error) {
+          console.warn(`AVA Core browser AI probe failed for ${candidate.label}:`, error);
+        }
+      }
+
+      return false;
+    }
+
+    getBrowserModelCandidates() {
+      const candidates = [];
+
+      if (globalThis.LanguageModel?.create) {
+        candidates.push({
+          label: "LanguageModel",
+          createSession: (options) => globalThis.LanguageModel.create(options),
+          getAvailability: () => globalThis.LanguageModel.availability?.()
+        });
+      }
+
+      if (globalThis.ai?.languageModel?.create) {
+        candidates.push({
+          label: "ai.languageModel",
+          createSession: (options) => globalThis.ai.languageModel.create(options),
+          getAvailability: async () => {
+            if (typeof globalThis.ai.languageModel.availability === "function") {
+              return globalThis.ai.languageModel.availability();
+            }
+
+            if (typeof globalThis.ai.languageModel.capabilities === "function") {
+              return globalThis.ai.languageModel.capabilities();
+            }
+
+            return "unknown";
+          }
+        });
+      }
+
+      return candidates;
+    }
+
+    isBrowserModelUnavailable(availability) {
+      if (!availability) {
+        return false;
+      }
+
+      if (typeof availability === "string") {
+        return ["no", "none", "unavailable", "unsupported"].includes(availability.toLowerCase());
+      }
+
+      if (typeof availability === "object") {
+        const status =
+          availability.availability || availability.status || availability.state || availability.value;
+        return typeof status === "string" && this.isBrowserModelUnavailable(status);
+      }
+
+      return false;
+    }
+
+    async tryBrowserModel(message, content) {
+      const candidates = this.getBrowserModelCandidates();
+      if (!candidates.length) {
+        return "";
+      }
+
+      const prompt = this.buildRuntimePrompt(message, content);
+
+      for (const candidate of candidates) {
+        let session = null;
+
+        try {
+          const availability = await candidate.getAvailability?.();
+          if (this.isBrowserModelUnavailable(availability)) {
+            continue;
+          }
+
+          session = await candidate.createSession({
+            systemPrompt: LOCAL_AI_SYSTEM_PROMPT
+          });
+
+          const response =
+            (typeof session?.prompt === "function" && (await session.prompt(prompt))) ||
+            (typeof session?.complete === "function" && (await session.complete(prompt))) ||
+            "";
+
+          const reply = typeof response === "string" ? response.trim() : this.extractReply(response);
+          if (reply) {
+            this.setRuntimeMode("Browser AI");
+            return reply;
+          }
+        } catch (error) {
+          console.warn(`AVA Core browser AI request failed for ${candidate.label}:`, error);
+        } finally {
+          session?.destroy?.();
+        }
+      }
+
+      return "";
+    }
+
     extractReply(payload) {
       if (!payload || typeof payload !== "object") {
         return "";
@@ -841,50 +983,46 @@
       return "";
     }
 
-    async fetchWithTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    async sendRuntimeMessage(payload) {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(payload, (response) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError) {
+            reject(new Error(runtimeError.message));
+            return;
+          }
 
-      try {
-        return await fetch(url, {
-          ...options,
-          signal: controller.signal
+          resolve(response);
         });
-      } finally {
-        window.clearTimeout(timeoutId);
-      }
+      });
     }
 
     async sendToBackend(message, content) {
-      const response = await this.fetchWithTimeout(BACKEND_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message,
-          content
-        })
+      const browserReply = await this.tryBrowserModel(message, content);
+      if (browserReply) {
+        return browserReply;
+      }
+
+      const runtimeResponse = await this.sendRuntimeMessage({
+        type: "AVA_CORE_GENERATE",
+        systemPrompt: LOCAL_AI_SYSTEM_PROMPT,
+        prompt: this.buildRuntimePrompt(message, content),
+        message,
+        content
       });
 
-      if (!response.ok) {
+      if (!runtimeResponse || typeof runtimeResponse !== "object") {
         throw new Error(SERVER_ERROR_MESSAGE);
       }
 
-      const contentType = response.headers.get("content-type") || "";
-      const responseText = await response.text();
-      const trimmedResponse = responseText.trim();
+      this.setRuntimeMode(runtimeResponse.providerLabel || "Local AI");
 
-      if (!trimmedResponse) {
-        return EMPTY_RESPONSE_MESSAGE;
+      const reply = this.extractReply(runtimeResponse);
+      if (reply) {
+        return reply;
       }
 
-      if (contentType.includes("application/json")) {
-        const data = JSON.parse(trimmedResponse);
-        return this.extractReply(data) || EMPTY_RESPONSE_MESSAGE;
-      }
-
-      return trimmedResponse || EMPTY_RESPONSE_MESSAGE;
+      return EMPTY_RESPONSE_MESSAGE;
     }
 
     setLoading(isLoading) {
@@ -1001,7 +1139,7 @@
           error?.name === "AbortError" ? TIMEOUT_ERROR_MESSAGE : SERVER_ERROR_MESSAGE;
 
         await this.showAssistantResponse(placeholder, fallbackMessage, false);
-        console.error("AVA Core backend error:", error);
+        console.error("AVA Core runtime error:", error);
       } finally {
         this.setLoading(false);
         this.focusInput();

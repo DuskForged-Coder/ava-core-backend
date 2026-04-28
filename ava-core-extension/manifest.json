@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "AVA Core",
-  "version": "1.0.0",
-  "description": "A floating AI assistant that appears on any webpage.",
+  "version": "1.1.0",
+  "description": "A floating local-first AI assistant that appears on any webpage.",
   "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "http://127.0.0.1:11434/*",
+    "http://localhost:11434/*",
+    "https://ava-core-backend.onrender.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

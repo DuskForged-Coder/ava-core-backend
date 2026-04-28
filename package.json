@@ -1,0 +1,14 @@
+{
+  "name": "ava-core-backend",
+  "version": "1.1.0",
+  "private": true,
+  "description": "AVA Core local-first Node backend fallback",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
